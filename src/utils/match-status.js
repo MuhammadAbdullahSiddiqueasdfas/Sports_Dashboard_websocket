@@ -1,34 +1,43 @@
-// Match status constants
-export const MATCH_STATUS = {
-  SCHEDULED: 'scheduled',
-  LIVE: 'live',
-  FINISHED: 'finished',
-};
+import { MATCH_STATUS } from '../validation/matches.js';
 
-// Helper functions for match status
-export const isMatchScheduled = (status) => status === MATCH_STATUS.SCHEDULED;
-export const isMatchLive = (status) => status === MATCH_STATUS.LIVE;
-export const isMatchFinished = (status) => status === MATCH_STATUS.FINISHED;
+// Function to determine match status
+export function getMatchStatus(startTime, endTime, now = new Date()) {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
 
-// Get all match statuses as array
-export const getAllMatchStatuses = () => Object.values(MATCH_STATUS);
+    // Invalid date check
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        return null;
+    }
 
-// Validate if a status is valid
-export const isValidMatchStatus = (status) => getAllMatchStatuses().includes(status);
+    // Match not started yet
+    if (now < start) {
+        return MATCH_STATUS.SCHEDULED;
+    }
 
-// Get status display name (capitalize first letter)
-export const getStatusDisplayName = (status) => {
-  if (!isValidMatchStatus(status)) return 'Unknown';
-  return status.charAt(0).toUpperCase() + status.slice(1);
-};
+    // Match finished
+    if (now >= end) {
+        return MATCH_STATUS.FINISHED;
+    }
 
-// Check if match can transition to a new status
-export const canTransitionTo = (currentStatus, newStatus) => {
-  const transitions = {
-    [MATCH_STATUS.SCHEDULED]: [MATCH_STATUS.LIVE],
-    [MATCH_STATUS.LIVE]: [MATCH_STATUS.FINISHED],
-    [MATCH_STATUS.FINISHED]: [], // No transitions from finished
-  };
+    // Match is live
+    return MATCH_STATUS.LIVE;
+}
 
-  return transitions[currentStatus]?.includes(newStatus) || false;
-};
+// Function to sync match status
+export async function syncMatchStatus(match, updateStatus) {
+    const nextStatus = getMatchStatus(match.startTime, match.endTime);
+
+    // If status can't be determined, keep current
+    if (!nextStatus) {
+        return match.status;
+    }
+
+    // If status changed, update it
+    if (match.status !== nextStatus) {
+        await updateStatus(nextStatus);
+        match.status = nextStatus;
+    }
+
+    return match.status;
+}

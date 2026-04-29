@@ -5,9 +5,10 @@ function sendJson(socket, payload) {
   socket.send(JSON.stringify(payload));
 }
 function broadcast(wss, payload) {
+  const serialized = JSON.stringify(payload);
   for (const client of wss.clients) {
-    if (client.readyState !== WebSocket.OPEN) return;
-    client.send(JSON.stringify(payload));
+    if (client.readyState !== WebSocket.OPEN) continue;
+    client.send(serialized);
   }
 }
 export function attachWebSocketServer(server) {

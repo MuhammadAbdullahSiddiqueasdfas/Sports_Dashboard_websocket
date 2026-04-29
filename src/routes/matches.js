@@ -54,8 +54,12 @@ matchesRouter.post("/", async (req, res) => {
       })
       .returning();
 
-    if (req.app.locals.broadcastMatchCreated) {
-      req.app.locals.broadcastMatchCreated(result[0]);
+    if (req.app.locals.broadcastMatchCreated && result[0]) {
+      try {
+        req.app.locals.broadcastMatchCreated(result[0]);
+      } catch (broadcastErr) {
+        console.error("Broadcast failed:", broadcastErr);
+      }
     }
     console.log("Insert result:", result);
     res.status(201).json({ data: result });

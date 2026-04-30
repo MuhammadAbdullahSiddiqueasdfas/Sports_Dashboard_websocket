@@ -8,7 +8,7 @@ if (!arcjetKey) throw new Error("missing arcjet key");
 export const httpArcjet = arcjetKey
   ? arcjet({
       key: arcjetKey,
-      rule: [
+      rules: [
         shield({ mode: arcjetMode }),
         detectBot({
           mode: arcjetMode,
@@ -16,7 +16,6 @@ export const httpArcjet = arcjetKey
             "CATEGORY:GOOGLE",
             "CATEGORY:SEARCH_ENGINE",
             "CATEGORY:PREVIEW",
-            "CATEGORY:BACKUP_SERVICE",
           ],
         }),
         slidingWindow({ mode: arcjetMode, interval: "10s", max: 50 }),
@@ -26,7 +25,7 @@ export const httpArcjet = arcjetKey
 export const wsArcjet = arcjetKey
   ? arcjet({
       key: arcjetKey,
-      rule: [
+      rules: [
         shield({ mode: arcjetMode }),
         detectBot({
           mode: arcjetMode,
@@ -34,7 +33,6 @@ export const wsArcjet = arcjetKey
             "CATEGORY:GOOGLE",
             "CATEGORY:SEARCH_ENGINE",
             "CATEGORY:PREVIEW",
-            "CATEGORY:BACKUP_SERVICE",
           ],
         }),
         slidingWindow({ mode: arcjetMode, interval: "2s", max: 5 }),

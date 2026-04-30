@@ -2,9 +2,16 @@ import express from 'express';
 import { createServer } from 'http';
 import { createWebSocketServer } from './ws/server.js';
 import { createMatchesRouter } from './routes/matches.js';
+import { securityMiddleware } from './arcjet.js';
+import 'dotenv/config';
+
+
+const PORT = Number(process.env.PORT||8000);
+const HOST = process.env.HOST || '0.0.0.0';
+
 
 const app = express();
-const PORT = 8000;
+const server = createServer(app);
 
 // Use JSON middleware
 app.use(express.json());
@@ -14,13 +21,17 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Sports Dashboard!');
 });
 
-const server = createServer(app);
+app.use(securityMiddleware());
+
 const { broadcast } = createWebSocketServer(server);
 const matchesRouter = createMatchesRouter({ broadcast });
 app.use('/matches', matchesRouter);
 
+
 // Start the HTTP + WebSocket server
 server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-  console.log(`WebSocket endpoint: ws://localhost:${PORT}/ws`);
+  const baseUrl = HOST === '0.0.0.0' ? `http://localhost:${PORT}` : `http://${HOST}:${PORT}`;
+
+  console.log(`Server running at ${baseUrl}`);
+  console.log(`WebSocket endpoint: ${baseUrl.replace('http', 'ws')}/ws`);
 });

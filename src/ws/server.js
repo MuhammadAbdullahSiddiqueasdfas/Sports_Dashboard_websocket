@@ -1,44 +1,66 @@
-import { WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from 'ws';
+import { wsArcjet } from '../arcjet.js';
 
-export function createWebSocketServer(httpServer) {
-  const wss = new WebSocketServer({ noServer: true });
-  const broadcast = (payload) => {
-    const message = JSON.stringify(payload);
+function sendJson(socket,payload){
+  if(socket.readyState!==WebSocket.OPEN) return;
+  socket.send(JSON.stringify(payload));
+}
 
-    wss.clients.forEach((client) => {
-      if (client.readyState === client.OPEN) {
-        client.send(message);
+function broadcast(wss,payload){
+  for(const client of wss.clients){
+    if(client.readyState!==WebSocket.OPEN) continue;
+    client.send(JSON.stringify(payload));
+  }
+}
+
+export function createWebSocketServer(server){
+  const wss = new WebSocketServer({ server, path:'/ws', maxPayload: 1024 * 1024 });
+
+  wss.on('connection', async(socket, req)=>{
+    if(wsArcjet){
+      try{
+        const decision = await wsArcjet.protect(req);
+        if(decision.isDenied()){
+          const code = decision.reason.isRateLimit() ? 1013 : 1008;
+          const reason = decision.reason.isRateLimit() ? 'Rate limit exceeded' : 'Access denied';
+          socket.close(code, reason);
+          return;
+        }
+      }catch(e){
+        console.error('WS connection error', e);
+        socket.close(1011, 'Server security error');
+        return;
       }
-    });
-  };
-
-  httpServer.on("upgrade", (request, socket, head) => {
-    const { pathname } = new URL(request.url, "http://localhost");
-
-    if (pathname !== "/ws") {
-      socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
-      socket.destroy();
-      return;
     }
 
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit("connection", ws, request);
+    socket.isAlive = true;
+    socket.on('pong', ()=>{ socket.isAlive = true; });
+    socket.on('error', console.error);
+
+    sendJson(socket,{
+      type:'connected',
+      message:'WebSocket connected to Sports Dashboard'
     });
-  });
 
-  wss.on("connection", (ws) => {
-    ws.send(
-      JSON.stringify({
-        type: "connected",
-        message: "WebSocket connected to Sports Dashboard",
-      }),
-    );
-
-    ws.on("message", (rawMessage) => {
+    socket.on('message', (rawMessage)=>{
       const message = rawMessage.toString();
-      ws.send(JSON.stringify({ type: "echo", message }));
+      sendJson(socket,{ type:'echo', message });
     });
   });
 
-  return { wss, broadcast };
+  const interval = setInterval(()=>{
+    wss.clients.forEach((socket)=>{
+      if(socket.isAlive===false) return socket.terminate();
+      socket.isAlive = false;
+      socket.ping();
+    });
+  }, 30000);
+
+  wss.on('close', ()=> clearInterval(interval));
+
+  return {
+    wss,
+    broadcast: (payload)=>broadcast(wss,payload)
+  };
 }
+

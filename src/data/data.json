@@ -1,0 +1,52 @@
+{
+  "matches": [
+    {
+      "sport": "Football",
+      "homeTeam": "Arsenal",
+      "awayTeam": "Manchester City",
+      "status": "live",
+      "homeScore": 1,
+      "awayScore": 0
+    },
+    {
+      "sport": "Basketball",
+      "homeTeam": "Lakers",
+      "awayTeam": "Warriors",
+      "status": "scheduled",
+      "homeScore": 0,
+      "awayScore": 0
+    },
+    {
+      "sport": "Football",
+      "homeTeam": "Real Madrid",
+      "awayTeam": "Barcelona",
+      "status": "finished",
+      "homeScore": 3,
+      "awayScore": 2
+    }
+  ],
+  "commentary": [
+    {
+      "matchIndex": 0,
+      "minute": 12,
+      "sequence": 1,
+      "period": "1st Half",
+      "eventType": "goal",
+      "actor": "Bukayo Saka",
+      "team": "Arsenal",
+      "message": "GOAL! Saka puts Arsenal ahead with a clinical finish!",
+      "tags": ["goal", "arsenal"]
+    },
+    {
+      "matchIndex": 0,
+      "minute": 25,
+      "sequence": 2,
+      "period": "1st Half",
+      "eventType": "yellow_card",
+      "actor": "Rodri",
+      "team": "Manchester City",
+      "message": "Yellow card for Rodri after a tactical foul.",
+      "tags": ["card", "city"]
+    }
+  ]
+}
